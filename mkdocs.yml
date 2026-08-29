@@ -24,6 +24,8 @@ nav:
   - Install: install.md
   - Usage: usage.md
   - Scope & limits: limits.md
+  - Name & branding: naming.md
+  - Vision & roadmap: roadmap.md
   - Performance: performance.md
   - API: api.md
 

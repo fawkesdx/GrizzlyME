@@ -15,9 +15,17 @@ Chinook remains responsible for building the TB model and (on first use) radial 
 
 Typical usage is a one-line swap: `GrizzlyExperiment` instead of `chinook.ARPES_lib.experiment`.
 
+## Name
+
+**Grizzly** honors Grizzly Peak near Berkeley Lab / MAESTRO (institutionally independent package). **ME** = matrix element.  
+**G.R.I.Z.Z.L.Y.** = GPU Rendered Inner-products for Zone-by-Zone Lattice Yields.  
+Details: [Name & branding](naming.md).
+
 ## Links
 
 - [Install](install.md)
 - [Usage](usage.md)
 - [Scope & limits](limits.md)
+- [Name & branding](naming.md)
+- [Vision & roadmap](roadmap.md)
 - [Source on GitHub](https://github.com/fawkesdx/GrizzlyME)

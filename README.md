@@ -2,9 +2,17 @@
 
 GPU-accelerated batched matrix elements for [chinook](https://github.com/rpday/chinook) ARPES simulations (PyTorch).
 
-GrizzlyME replaces the hot path — chinook `serial_Mk` and spectral assembly — with vectorized tensor ops. Tight-binding setup and radial integrals still use chinook.
+GrizzlyME is a high-performance companion to chinook: same spinless ARPES workflow, with the matrix-element and spectral hot path rewritten as batched PyTorch ops for CPU and CUDA. Aimed at public install for the ARPES community (GitHub now; PyPI/Conda planned).
 
-**Status:** v0.1 alpha — spinless models. See [docs](https://fawkesdx.github.io/GrizzlyME/) for usage and limits.
+**Status:** v0.1 alpha — spinless models. Docs: [fawkesdx.github.io/GrizzlyME](https://fawkesdx.github.io/GrizzlyME/).
+
+## Name
+
+- **Grizzly** — homage to Grizzly Peak behind Berkeley Lab, near MAESTRO; institutionally independent; evokes heavy-duty compute
+- **ME** — matrix element
+- **G.R.I.Z.Z.L.Y.** — GPU Rendered Inner-products for Zone-by-Zone Lattice Yields
+
+Full note: [docs → Name & branding](https://fawkesdx.github.io/GrizzlyME/naming/).
 
 ## Install
 
