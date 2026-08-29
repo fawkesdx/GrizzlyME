@@ -1,6 +1,6 @@
 # Publishing (maintainers)
 
-Package name on PyPI: **`grizzlyme`** (0.1.0 alpha). Name is available on PyPI and TestPyPI as of first release prep.
+Package name on PyPI: **`grizzlyme`** (current: **0.1.1** alpha).
 
 ## One-time setup
 
@@ -22,12 +22,12 @@ pip install build twine
 python -m build
 ```
 
-Artifacts: `dist/grizzlyme-0.1.0.tar.gz` and `dist/grizzlyme-0.1.0-py3-none-any.whl`.
+Artifacts: `dist/grizzlyme-0.1.1.tar.gz` and `dist/grizzlyme-0.1.1-py3-none-any.whl`.
 
 ## Step 1 — TestPyPI
 
 ```bash
-twine upload --repository testpypi dist/grizzlyme-0.1.0*
+twine upload --repository testpypi dist/grizzlyme-0.1.1*
 ```
 
 Smoke test in a **new venv**:
@@ -36,7 +36,7 @@ Smoke test in a **new venv**:
 python -m venv /tmp/grizzly-test && source /tmp/grizzly-test/bin/activate
 pip install --index-url https://test.pypi.org/simple/ \
   --extra-index-url https://pypi.org/simple/ \
-  grizzlyme==0.1.0
+  grizzlyme==0.1.1
 python -c "from grizzly import GrizzlyExperiment; print('ok')"
 ```
 
@@ -45,7 +45,7 @@ The extra index URL is required so dependencies (`torch`, `chinook`, …) instal
 ## Step 2 — PyPI
 
 ```bash
-twine upload dist/grizzlyme-0.1.0*
+twine upload dist/grizzlyme-0.1.1*
 ```
 
 Users:
@@ -58,6 +58,6 @@ pip install grizzlyme
 
 Bump `version` in `pyproject.toml` for each release. PyPI does not allow replacing an uploaded version.
 
-## 0.1.0 expectations
+## 0.1.1 expectations
 
 Document on the PyPI project page: **alpha**, spinless only, requires chinook + PyTorch.
