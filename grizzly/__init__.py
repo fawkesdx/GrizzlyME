@@ -6,6 +6,10 @@ import collections.abc
 if not hasattr(collections, "Iterable"):
     collections.Iterable = collections.abc.Iterable
 
+from ._chinook_compat import ensure_chinook_headless_ok
+
+ensure_chinook_headless_ok()
+
 from .future import GrizzlyMEv2FeatureError, require_spinless
 from .experiment import GrizzlyExperiment
 from .engine import compute_all_Mk

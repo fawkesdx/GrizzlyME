@@ -37,3 +37,5 @@ Optional: `pip install -e ".[bench]"` for matplotlib-based figure scripts.
 | `"cpu"` | CPU |
 
 **MPS** (Metal) is detected but **not supported** for the float64 / complex128 engine. Use `device="cpu"` on those systems until a float32 path exists.
+
+Tk / interactive chinook map GUI is **not required**. GrizzlyME stubs `chinook.Tk_plot` when `_tkinter` is missing (common with Homebrew Python).
