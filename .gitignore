@@ -1,0 +1,53 @@
+# Bytecode / envs
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+.env
+
+# Test / tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local / private (do not publish)
+RESULTS.private.md
+benchmarks/RESULTS.private.md
+docs/
+plans/
+EXECUTION_PLAN.md
+PLAN.md
+pytorch_port_plan.md
+map_of_chinook.md
+*.private.*
+
+# Scratch scripts & absolute-path artifacts
+test_out.txt
+test_band.py
+test_band_grizzly.py
+test_black.py
+test_k.py
+test_shape.py
+test_sk.py
+test_tb.py
+test_tb2.py
+test_x_y.py
+check_bands.py
+check_bands_1d.py
+plot_arpes_comparison.py
+
+# Caches / OS
+.cache/
+*.pkl
+.DS_Store
+.idea/
+.vscode/
+
+# MkDocs build
+site/

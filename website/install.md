@@ -1,0 +1,30 @@
+# Install
+
+```bash
+pip install grizzlyme
+```
+
+From a clone of this repository:
+
+```bash
+pip install -e ".[dev]"
+```
+
+## Requirements
+
+- Python ≥ 3.10
+- [PyTorch](https://pytorch.org/) ≥ 2.0
+- [chinook](https://github.com/rpday/chinook) ≥ 1.1.3
+- NumPy, psutil
+
+Optional: `pip install -e ".[bench]"` for matplotlib-based figure scripts.
+
+## Devices
+
+| `device=` | Behavior |
+|-----------|----------|
+| `"auto"` | Prefer CUDA if available, else CPU |
+| `"cuda"` | CUDA GPU |
+| `"cpu"` | CPU |
+
+**MPS** (Metal) is detected but **not supported** for the float64 / complex128 engine. Use `device="cpu"` on those systems until a float32 path exists.
