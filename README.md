@@ -18,7 +18,17 @@ Full note: [docs → Name & branding](https://fawkesdx.github.io/GrizzlyME/namin
 
 ```bash
 pip install grizzlyme
-# or from source:
+```
+
+From GitHub before or instead of PyPI:
+
+```bash
+pip install git+https://github.com/fawkesdx/GrizzlyME.git
+```
+
+From a clone (development):
+
+```bash
 pip install -e ".[dev]"
 ```
 

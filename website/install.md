@@ -4,11 +4,19 @@
 pip install grizzlyme
 ```
 
+From GitHub:
+
+```bash
+pip install git+https://github.com/fawkesdx/GrizzlyME.git
+```
+
 From a clone of this repository:
 
 ```bash
 pip install -e ".[dev]"
 ```
+
+Maintainers: [Publishing](publishing.md) (TestPyPI → PyPI).
 
 ## Requirements
 
