@@ -51,7 +51,8 @@ Private hostnames and absolute paths: `benchmarks/RESULTS.private.md` (gitignore
 | 100 × 100 × 40 | 10000 | 20 | 4399.90 | 4458.6 | no | LADDER.jsonl |
 | 200 × 1 × 200 | 200 | 40 | 937.02 | 995.3 | no | LADDER.jsonl |
 | 200 × 40 × 100 | 8000 | 20 | 4681.73 | 4740.8 | no | LADDER.jsonl |
-| **200 × 200 × 200** | **40000** | **20** | **762** | — | no | GUI run; 1× V100; **paper endpoint** |
+| **200 × 200 × 200** | **40000** | **20** | **762** | — | no | Bare ME; 1× V100 (Run A) |
+| **200 × 200 × 200** | **40000** | **20** | **~2715** | — | no | **Full ME**; 1× V100 (Run E) |
 | **200 × 200 × 200** | **40000** | **18** | **~1970 (est.)** | — | no | GUI run; 2× V100 multi-chunk; log overwritten |
 
 Full 200³ detail: `CUDA_HOST_200x200x200.md`. Mac baseline: `LOCAL_MAC_200x200x200.md` (**37187 s** Chinook).
@@ -113,8 +114,8 @@ Full 200³ detail: `CUDA_HOST_200x200x200.md`. Mac baseline: `LOCAL_MAC_200x200x
 3. **Wall ≈ linear in number of equal θ-chunks** at fixed (nφ, nE) — chunk times nearly flat (~12–15 min).
 4. **nk alone is not enough:** 80×1×80 (nk=80) finishes in ~3.5 min; 80×40×40 (nk=3200) ~22 min — φ×orbital×ME cost matters.
 5. **Hybrid path:** Grizzly ME on CUDA + Chinook spectral still CPU-bound on spectral assembly for large cubes → paper Module-3 motivation (GPU spectral).
-6. **Dual V100:** multi-GPU θ-chunk path used for 200³ (Aug 30); Run A single-GPU **762 s** remains best logged wall; Run B 2× GPU **~1970 s** estimated — scheduling overhead TBD.
-7. **200³ endpoint vs Mac:** Chinook Mac Studio **~10.3 h** → Grizzly 1× V100 **12.7 min** (**~49×**); see `CUDA_HOST_200x200x200.md`.
+6. **Dual V100:** Full ME multi-GPU ~28–33 min (Runs B–C); Bare single-GPU **762 s** still fastest absolute wall.
+7. **200³ vs Mac:** Bare ME → **12.7 min (~49×)**; Full ME 1×GPU → **~45 min (~14×)**; see `CUDA_HOST_200x200x200.md`.
 
 ## Related early path findings (include if discussing “why CUDA full”)
 
@@ -146,7 +147,7 @@ python -u bench_grizzly_scale.py --ntheta 80 --nphi 80 --ne 40 \
 | Output | simulated cube (~61 MB; intensity shape confirmed) |
 | Peak RAM (observe) | ~211 GB footprint |
 
-**cuda-host 200³ Grizzly recorded** — see `CUDA_HOST_200x200x200.md` (762 s logged single-GPU; ~1970 s est. dual-GPU).
+**cuda-host 200³ Grizzly recorded** — see `CUDA_HOST_200x200x200.md` (Bare 762 s; Full ME ~2715 s 1×GPU; ~1680–1970 s est. dual-GPU).
 
 ## Update log
 

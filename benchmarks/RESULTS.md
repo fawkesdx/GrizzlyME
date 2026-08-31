@@ -258,11 +258,12 @@ Grizzly `datacube()` now skips chinook `serial_Mk` by default. CPU forced; media
 | 100×100×40 | 10000 | 20 | 4399.90 | no | LADDER.jsonl |
 | 200×1×200 | 200 | 40 | 937.02 | no | LADDER.jsonl |
 | 200×40×100 | 8000 | 20 | 4681.73 | no | LADDER.jsonl |
-| **200×200×200** | **40000** | **20** | **762** | no | 1× V100; paper endpoint |
-| **200×200×200** | **40000** | **18** | **~1970 (est.)** | no | 2× V100 multi-GPU (Run B) |
-| **200×200×200** | **40000** | **18** | **~1680 (est.)** | no | 2× V100 multi-GPU (Run C, 2026-08-31) |
+| **200×200×200** | **40000** | **20** | **762** | no | 1× V100; **Bare ME** (Run A) |
+| **200×200×200** | **40000** | **18** | **~1970 (est.)** | no | 2× V100 Full ME (Run B) |
+| **200×200×200** | **40000** | **18** | **~1680 (est.)** | no | 2× V100 Full ME (Run C) |
+| **200×200×200** | **40000** | **20** | **~2715** | no | 1× V100 **Full ME** (Run E, 2026-08-31) |
 
-**Paper takeaways:** real Wannier cubes cost minutes–hours (not graphene ms); θ-chunking enables larger maps without OOM; wall ≈ linear in chunk count; **200³ Mac Chinook ~10.3 h → cuda-host Grizzly ~12.7 min (~49×)**; GPU spectral still a win target.
+**Paper takeaways:** ME mode dominates wall; Bare ~13 min vs Full ME ~45 min on 1× V100 (datacube per θ-chunk). **Bare:** Mac ~10.3 h → **12.7 min (~49×)**. **Full ME:** Mac ~10.3 h → **~45 min (~14×)**.
 
 ## Local Mac Studio Chinook 200³ (baseline, 2026-08-30)
 
@@ -280,14 +281,15 @@ Grizzly `datacube()` now skips chinook `serial_Mk` by default. CPU forced; media
 - model: ~6.7M hoppings Wannier TB (same class as Mac baseline)
 - path: GrizzlyME CUDA full + Chinook spectral (hybrid)
 
-| run | GPUs | θ-chunk | full-cube wall_s | oom | notes |
-|-----|------|---------|------------------|-----|-------|
-| A (logged) | 1 | 20 | **762** | no | canonical paper number |
-| B (est.) | 2 | 18 | **~1970** | no | multi-GPU; log lost to rerun |
-| C (est.) | 2 | 18 | **~1680** | no | 2026-08-31 repeat; cube mtime |
-| Mac Chinook | — | — | **37187** | — | baseline; ~49× slower than Run A |
+| run | GPUs | θ-chunk | ME | full-cube wall_s | oom | notes |
+|-----|------|---------|----|------------------|-----|-------|
+| A (logged) | 1 | 20 | Bare | **762** | no | fast path; not Full ME |
+| B (est.) | 2 | 18 | Full | **~1970** | no | multi-GPU; log lost |
+| C (est.) | 2 | 18 | Full | **~1680** | no | cube mtime |
+| E (est.) | 1 | 20 | Full | **~2715** | no | process→cube 04:42–05:27; fair Full ME |
+| Mac Chinook | — | — | Full | **37187** | — | baseline |
 
-**Paper one-liner:** 200³ ARPES cube: Mac Chinook **10.3 h** → cuda-host Grizzly **12.7 min** (**~49×**).
+**Paper one-liners:** Bare **12.7 min (~49× vs Mac)**; Full ME 1×GPU **~45 min (~14× vs Mac)**. Detail: `CUDA_HOST_200x200x200.md`.
 
 <!-- AUTO:SCALE_LADDER_START -->
 - when: auto-sync 2026-08-31 01:22 UTC
