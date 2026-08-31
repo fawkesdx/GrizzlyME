@@ -1,6 +1,6 @@
 # Publishing (maintainers)
 
-Package name on PyPI: **`grizzlyme`** (current: **0.1.3** alpha).
+Package name on PyPI: **`grizzlyme`** (current: **0.1.4** alpha).
 
 ## One-time setup
 
@@ -22,12 +22,12 @@ pip install build twine
 python -m build
 ```
 
-Artifacts: `dist/grizzlyme-0.1.3.tar.gz` and `dist/grizzlyme-0.1.3-py3-none-any.whl`.
+Artifacts: `dist/grizzlyme-0.1.4.tar.gz` and `dist/grizzlyme-0.1.4-py3-none-any.whl`.
 
 ## Step 1 — TestPyPI
 
 ```bash
-twine upload --repository testpypi dist/grizzlyme-0.1.3*
+twine upload --repository testpypi dist/grizzlyme-0.1.4*
 ```
 
 Smoke test in a **new venv**:
@@ -36,7 +36,7 @@ Smoke test in a **new venv**:
 python -m venv /tmp/grizzly-test && source /tmp/grizzly-test/bin/activate
 pip install --index-url https://test.pypi.org/simple/ \
   --extra-index-url https://pypi.org/simple/ \
-  grizzlyme==0.1.3
+  grizzlyme==0.1.4
 python -c "from grizzly import GrizzlyExperiment; print('ok')"
 ```
 
@@ -45,7 +45,7 @@ The extra index URL is required so dependencies (`torch`, `chinook`, …) instal
 ## Step 2 — PyPI
 
 ```bash
-twine upload dist/grizzlyme-0.1.3*
+twine upload dist/grizzlyme-0.1.4*
 ```
 
 Users:
@@ -58,6 +58,6 @@ pip install grizzlyme
 
 Bump `version` in `pyproject.toml` for each release. PyPI does not allow replacing an uploaded version.
 
-## 0.1.3 expectations
+## 0.1.4 expectations
 
-Document on the PyPI project page: **alpha**, spinless only, requires chinook + PyTorch.
+GPU spectral path: `build_raw_I_from_experiment(..., device=)` and `spectral_maps_from_experiment()` for CUDA/MPS spectral cubes. Document on the PyPI project page: **alpha**, spinless only, requires chinook + PyTorch.

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "grizzlyme"
-version = "0.1.3"
+version = "0.1.4"
 description = "GPU-accelerated ARPES matrix elements for chinook (PyTorch; spinless alpha)"
 readme = "README.md"
 requires-python = ">=3.10"

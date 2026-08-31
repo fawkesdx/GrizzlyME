@@ -1,5 +1,6 @@
 """Spectral assembly helpers (Phase 4)."""
 
+import numpy as np
 import torch
 
 # chinook ARPES_lib constants (T_distribution / con_ferm)
@@ -91,24 +92,39 @@ def gaussian_convolution_3d(I, sigma_y, sigma_x, sigma_w) -> torch.Tensor:
     return torch.fft.ifftn(F).real
 
 
-def build_raw_I_from_experiment(exp) -> torch.Tensor:
+def build_raw_I_from_experiment(exp, device: str | torch.device = "cpu") -> torch.Tensor:
     """Rebuild chinook raw I from experiment fields (smoke-test helper)."""
     from chinook.ARPES_lib import pol_2_sph
 
-    Mk = torch.as_tensor(exp.Mk, dtype=torch.complex128)
+    from grizzly.utils import get_device
+
+    dev = get_device(device) if isinstance(device, str) else device
+    Mk = torch.as_tensor(exp.Mk, dtype=torch.complex128, device=dev)
     if getattr(exp, "coord_type", "momentum") == "angle":
         # Chinook rotates pol with cryostat angles (Tx/Ty cubes).
-        pol_sph = torch.as_tensor(exp.gen_all_pol(), dtype=torch.complex128)
+        pol_sph = torch.as_tensor(exp.gen_all_pol(), dtype=torch.complex128, device=dev)
     else:
-        pol_sph = torch.as_tensor(pol_2_sph(exp.pol), dtype=torch.complex128)
+        pol_sph = torch.as_tensor(pol_2_sph(exp.pol), dtype=torch.complex128, device=dev)
     M_factor = compute_M_factor(Mk, pol_sph)
-    omega = torch.linspace(*exp.cube[2], dtype=torch.float64)
+    omega = torch.linspace(*exp.cube[2], dtype=torch.float64, device=dev)
     fermi = compute_fermi_distribution(omega, exp.T)
-    pks = torch.as_tensor(exp.pks, dtype=torch.float64)
+    pks = torch.as_tensor(exp.pks, dtype=torch.float64, device=dev)
     grid_shape = (exp.cube[1][2], exp.cube[0][2], exp.cube[2][2])
     return compute_spectral_intensity(
         M_factor, pks, omega, exp.SE_gen(), fermi, grid_shape
     )
+
+
+def spectral_maps_from_experiment(
+    exp, device: str | torch.device = "cpu"
+) -> tuple[np.ndarray, np.ndarray]:
+    """Raw + broadened intensity maps; CUDA/MPS when available."""
+    from grizzly.utils import to_numpy
+
+    I = build_raw_I_from_experiment(exp, device=device)
+    kyg, kxg, wg = chinook_gaussian_sigmas(exp)
+    Ig = gaussian_convolution_3d(I, kyg, kxg, wg)
+    return to_numpy(I), to_numpy(Ig)
 
 
 def chinook_gaussian_sigmas(exp):

@@ -161,7 +161,7 @@ class GrizzlyExperiment:
 
         self.ensure_Mk()
 
-        I = build_raw_I_from_experiment(self._exp)
+        I = build_raw_I_from_experiment(self._exp, device=str(self.device))
         kyg, kxg, wg = chinook_gaussian_sigmas(self._exp)
         Ig = gaussian_convolution_3d(I, kyg, kxg, wg)
 
