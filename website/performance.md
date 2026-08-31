@@ -26,3 +26,25 @@ python benchmarks/bench_me.py
 python benchmarks/bench_full.py --append "Full pipeline"
 python benchmarks/bench_large.py --append "Large grids"
 ```
+
+## Production Wannier scale ladder
+
+Indicative **full-cube** walls on a real Wannier TB (~10⁶ hoppings), GrizzlyME CUDA `layout=full` (hybrid Chinook spectral), one V100:
+
+| Grid | Wall | Notes |
+|------|------|-------|
+| 40×40×40 | ~12 min | no θ-chunk |
+| 80×40×40 | ~22 min | no θ-chunk |
+| 80×80×40 | ~50 min | θ-chunk=20 |
+
+Larger grids use θ-chunking to avoid OOM. Full table: `benchmarks/RESULTS.md` and `benchmarks/PAPER_SCALE_LADDER.md`.
+
+## Production 200³ endpoint
+
+| Platform | Wall | Notes |
+|----------|------|-------|
+| Mac Studio Chinook (local) | ~10.3 h | baseline; ~200 GB peak RAM |
+| cuda-host Grizzly 1× V100 | **12.7 min (762 s)** | θ-chunk=20; ~49× vs Mac |
+| cuda-host Grizzly 2× V100 | ~33 min (est.) | multi-GPU θ-chunk=18 |
+
+Detail: `benchmarks/CUDA_HOST_200x200x200.md`, `benchmarks/LOCAL_MAC_200x200x200.md`.

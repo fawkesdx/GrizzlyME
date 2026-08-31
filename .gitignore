@@ -41,6 +41,10 @@ test_x_y.py
 check_bands.py
 check_bands_1d.py
 plot_arpes_comparison.py
+benchmarks/sync_paper_scale_ladder.py
+benchmarks/stage_fastpath_after_200cube.sh
+benchmarks/run_sync_loop.sh
+benchmarks/scale_ladder_2026-08-30/
 
 # Caches / OS
 .cache/

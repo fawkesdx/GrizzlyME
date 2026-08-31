@@ -237,3 +237,71 @@ Grizzly `datacube()` now skips chinook `serial_Mk` by default. CPU forced; media
 - path: ~/.cache/grizzlyme/radint or $GRIZZLY_RADINT_CACHE_DIR
 - disable: GRIZZLY_RADINT_DISK=0
 - cold start (empty memory, warm disk): make_radint_pointer not called; Mk parity < 1e-10
+
+## Production Wannier ARPES scale ladder (CUDA full, 2026-08-30)
+
+- when: 2026-08-30
+- host: cuda-host (1× NVIDIA V100 32GB used)
+- model: production Wannier TB (~6.7M hoppings), not graphene toy
+- path: GrizzlyME `compute_all_Mk` (CUDA) + Chinook `spectral` (hybrid)
+- layout: full; θ-chunk as noted
+- full detail / SI prose: `benchmarks/PAPER_SCALE_LADDER.md`
+- private host paths: `benchmarks/RESULTS.private.md`
+
+| grid (nθ×nφ×nE) | nk | θ-chunk | full-cube wall_s | oom | notes |
+|-----------------|----|---------|------------------|-----|-------|
+| 40×10×40 | 400 | 0 | 332.42 | no | |
+| 40×40×40 | 1600 | 0 | 740.82 | no | |
+| 80×1×80 | 80 | 0 | 212.73 | no | |
+| 80×40×40 | 3200 | 0 | 1343.84 | no | |
+| 80×80×40 | 6400 | 20 | 2984.50 | no | 4×~740–754 s chunks |
+| 100×100×40 | 10000 | 20 | 4399.90 | no | LADDER.jsonl |
+| 200×1×200 | 200 | 40 | 937.02 | no | LADDER.jsonl |
+| 200×40×100 | 8000 | 20 | 4681.73 | no | LADDER.jsonl |
+| **200×200×200** | **40000** | **20** | **762** | no | 1× V100; paper endpoint |
+| **200×200×200** | **40000** | **18** | **~1970 (est.)** | no | 2× V100 multi-GPU |
+
+**Paper takeaways:** real Wannier cubes cost minutes–hours (not graphene ms); θ-chunking enables larger maps without OOM; wall ≈ linear in chunk count; **200³ Mac Chinook ~10.3 h → cuda-host Grizzly ~12.7 min (~49×)**; GPU spectral still a win target.
+
+## Local Mac Studio Chinook 200³ (baseline, 2026-08-30)
+
+- host: mac-studio (Apple Silicon); path: TensorSpec GUI in-process Chinook
+- grid: **200×200×200** (`intensity` shape confirmed)
+- wall: **37187 s (~10.33 h)** from GUI process start to cube save mtime
+- output: simulated cube (~58 MB)
+- peak memory (observed): ~211 GB physical footprint
+- detail: `benchmarks/LOCAL_MAC_200x200x200.md`
+- compare vs cuda-host Grizzly CUDA 200³ below
+
+## cuda-host Grizzly 200³ (production Wannier, 2026-08-30)
+
+- detail: `benchmarks/CUDA_HOST_200x200x200.md`
+- model: ~6.7M hoppings Wannier TB (same class as Mac baseline)
+- path: GrizzlyME CUDA full + Chinook spectral (hybrid)
+
+| run | GPUs | θ-chunk | full-cube wall_s | oom | notes |
+|-----|------|---------|------------------|-----|-------|
+| A (logged) | 1 | 20 | **762** | no | canonical paper number |
+| B (est.) | 2 | 18 | **~1970** | no | multi-GPU; log lost to rerun |
+| Mac Chinook | — | — | **37187** | — | baseline; ~49× slower than Run A |
+
+**Paper one-liner:** 200³ ARPES cube: Mac Chinook **10.3 h** → cuda-host Grizzly **12.7 min** (**~49×**).
+
+<!-- AUTO:SCALE_LADDER_START -->
+- when: auto-sync 2026-08-31 01:22 UTC
+- status: complete
+- host: cuda-host (1× NVIDIA V100 32GB used)
+- detail: `benchmarks/PAPER_SCALE_LADDER.md`
+
+| grid (nθ×nφ×nE) | nk | θ-chunk | full-cube wall_s | oom | notes |
+|-----------------|----|---------|------------------|-----|-------|
+| 40×1×40 | 40 | 0 | ~264 | no | early probe; CUDA full |
+| 40×10×40 | 400 | 0 | 332.42 | no | result JSON |
+| 40×40×40 | 1600 | 0 | 740.82 | no | job log |
+| 80×1×80 | 80 | 0 | 212.73 | no | LADDER.jsonl |
+| 80×40×40 | 3200 | 0 | 1343.84 | no | LADDER.jsonl |
+| 80×80×40 | 6400 | 20 | 2984.50 | no | LADDER.jsonl |
+| 100×100×40 | 10000 | 20 | 4399.90 | no | LADDER.jsonl |
+| 200×1×200 | 200 | 40 | 937.02 | no | LADDER.jsonl |
+| 200×40×100 | 8000 | 20 | 4681.73 | no | LADDER.jsonl |
+<!-- AUTO:SCALE_LADDER_END -->
