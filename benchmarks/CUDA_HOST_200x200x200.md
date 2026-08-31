@@ -1,7 +1,7 @@
 # CUDA cluster — 200×200×200 GrizzlyME CUDA ARPES (paper record)
 
 **Do not delete.** Production-scale endpoint for GrizzlyME vs local Mac Chinook baseline.
-**Status:** Run A **logged**; Run B **completed** (wall estimated).
+**Status:** Run A **logged** (paper canonical); Run B–C **completed** (wall estimated); Run D **in progress**.
 
 Public summary: `RESULTS.md` · Mac baseline: `LOCAL_MAC_200x200x200.md` · Mid-grid ladder: `PAPER_SCALE_LADDER.md`.
 
@@ -40,24 +40,54 @@ Public summary: `RESULTS.md` · Mac baseline: `LOCAL_MAC_200x200x200.md` · Mid-
 |--------|-------|
 | **wall (estimated)** | **~1970 s (~32.8 min)** |
 | Estimate method | Process elapsed + cube mtime (log overwritten by later rerun) |
+| Finished | 2026-08-30 |
 | GPUs | **2** — log: `Using GPU ids: [0, 1]` |
 | Layout | `FULL layout MULTI-GPU (θ-chunk=18, gpus=[0, 1]): 200 x 200 x 200, 12 blocks` |
 | θ-chunk | **18** (auto VRAM plan) |
 | OOM | no |
 | Cube size | **29,163,587 B (~27.8 MB)** |
-| Notes | Multi-GPU path; slower than Run A in this snapshot — scheduling overhead TBD |
+| Notes | Multi-GPU path; slower than Run A — multi-GPU θ-block overhead |
+
+---
+
+## Run C — dual-GPU repeat (wall estimated, 2026-08-31)
+
+| Metric | Value |
+|--------|-------|
+| **wall (estimated)** | **~1680 s (~28.0 min)** |
+| Estimate method | Cube mtime minus dispatch start (~03:30 → 03:58 PT); log overwritten |
+| Finished | 2026-08-31 (cube mtime 03:58) |
+| GPUs | **2** (`Using GPU ids: [0, 1]`) |
+| Layout | `FULL layout MULTI-GPU (θ-chunk=18, gpus=[0, 1]): 200 x 200 x 200, 12 blocks` |
+| θ-chunk | **18** (auto VRAM plan) |
+| OOM | no |
+| Cube size | **29,166,464 B (~27.8 MB)** |
+| Notes | ~15% faster than Run B; cluster GPU contention lower at capture |
+
+---
+
+## Run D — dual-GPU in progress (2026-08-31, not for paper table yet)
+
+| Metric | Value |
+|--------|-------|
+| **status** | running at capture (~2/10 θ blocks logged) |
+| Started | 2026-08-31 ~04:04 PT |
+| GPUs | **2** |
+| Layout | `FULL layout MULTI-GPU (θ-chunk=20, gpus=[0, 1]): 200 x 200 x 200, 10 blocks` |
+| Per-block wall (early) | **~245–285 s** → projected **~40–47 min** total if linear |
+| Notes | Slower per block than Run A (~76 s/block); multi-GPU worker path; append logged `full-cube wall (multi-GPU)` when done |
 
 ---
 
 ## Mac vs cuda-host (paper compare)
 
-| | Mac Studio Chinook | cuda-host Grizzly (Run A) | cuda-host Grizzly (Run B est.) |
-|--|-------------------|---------------------------|--------------------------------|
-| wall_s | **37,187 (~10.33 h)** | **762 (~12.7 min)** | **~1,970 (~32.8 min)** |
-| speedup vs Mac | 1× | **~49×** | **~19×** |
-| device | Apple Silicon CPU | 1× V100 | 2× V100 |
-| path | GUI in-process Chinook | hybrid Grizzly ME + Chinook spectral | same + multi-GPU θ blocks |
-| cube bytes | ~60.8 MB | ~28 MB | ~29.2 MB |
+| | Mac Studio Chinook | cuda-host Grizzly (Run A) | cuda-host Grizzly (Run B est.) | cuda-host Grizzly (Run C est.) |
+|--|-------------------|---------------------------|--------------------------------|--------------------------------|
+| wall_s | **37,187 (~10.33 h)** | **762 (~12.7 min)** | **~1,970 (~32.8 min)** | **~1,680 (~28.0 min)** |
+| speedup vs Mac | 1× | **~49×** | **~19×** | **~22×** |
+| device | Apple Silicon CPU | 1× V100 | 2× V100 | 2× V100 |
+| path | GUI in-process Chinook | hybrid Grizzly ME + Chinook spectral | same + multi-GPU θ blocks | same + multi-GPU θ blocks |
+| cube bytes | ~60.8 MB | ~28 MB | ~29.2 MB | ~29.2 MB |
 
 **Paper one-liner (draft):** On a production Wannier tight-binding model (~6.7M hoppings), a **200³** ARPES intensity cube that required **~10.3 h** on a Mac Studio running in-process Chinook completed in **12.7 min** on a single Tesla V100 using GrizzlyME CUDA full layout with θ-chunking — a **~49×** wall-clock reduction.
 
@@ -81,4 +111,4 @@ python -u chinook_remote_runner.py \
 
 ## Update log
 
-- **2026-08-31:** Paper record (Run A logged 762 s; Run B estimated ~1970 s).
+- **2026-08-31:** Paper record (Run A logged 762 s; Run B ~1970 s est.; Run C ~1680 s est.; Run D in progress).

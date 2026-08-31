@@ -259,7 +259,8 @@ Grizzly `datacube()` now skips chinook `serial_Mk` by default. CPU forced; media
 | 200×1×200 | 200 | 40 | 937.02 | no | LADDER.jsonl |
 | 200×40×100 | 8000 | 20 | 4681.73 | no | LADDER.jsonl |
 | **200×200×200** | **40000** | **20** | **762** | no | 1× V100; paper endpoint |
-| **200×200×200** | **40000** | **18** | **~1970 (est.)** | no | 2× V100 multi-GPU |
+| **200×200×200** | **40000** | **18** | **~1970 (est.)** | no | 2× V100 multi-GPU (Run B) |
+| **200×200×200** | **40000** | **18** | **~1680 (est.)** | no | 2× V100 multi-GPU (Run C, 2026-08-31) |
 
 **Paper takeaways:** real Wannier cubes cost minutes–hours (not graphene ms); θ-chunking enables larger maps without OOM; wall ≈ linear in chunk count; **200³ Mac Chinook ~10.3 h → cuda-host Grizzly ~12.7 min (~49×)**; GPU spectral still a win target.
 
@@ -283,6 +284,7 @@ Grizzly `datacube()` now skips chinook `serial_Mk` by default. CPU forced; media
 |-----|------|---------|------------------|-----|-------|
 | A (logged) | 1 | 20 | **762** | no | canonical paper number |
 | B (est.) | 2 | 18 | **~1970** | no | multi-GPU; log lost to rerun |
+| C (est.) | 2 | 18 | **~1680** | no | 2026-08-31 repeat; cube mtime |
 | Mac Chinook | — | — | **37187** | — | baseline; ~49× slower than Run A |
 
 **Paper one-liner:** 200³ ARPES cube: Mac Chinook **10.3 h** → cuda-host Grizzly **12.7 min** (**~49×**).

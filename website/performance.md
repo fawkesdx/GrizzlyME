@@ -45,6 +45,6 @@ Larger grids use θ-chunking to avoid OOM. Full table: `benchmarks/RESULTS.md` a
 |----------|------|-------|
 | Mac Studio Chinook (local) | ~10.3 h | baseline; ~200 GB peak RAM |
 | cuda-host Grizzly 1× V100 | **12.7 min (762 s)** | θ-chunk=20; ~49× vs Mac |
-| cuda-host Grizzly 2× V100 | ~33 min (est.) | multi-GPU θ-chunk=18 |
+| cuda-host Grizzly 2× V100 | ~28–33 min (est.) | multi-GPU θ-chunk=18; Runs B–C |
 
 Detail: `benchmarks/CUDA_HOST_200x200x200.md`, `benchmarks/LOCAL_MAC_200x200x200.md`.
