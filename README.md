@@ -47,6 +47,8 @@ I, Ig = exp.spectral()
 
 TB construction and (first-call) Slater radial integrals still use chinook. Repeat cubes reuse radials via an in-process / disk cache.
 
+For multi-GPU jobs, prepare the matrix-element shell once in the parent process before spawning workers. The disk cache uses a process-safe lock, so concurrent workers share one radial-integral build instead of duplicating it.
+
 ## Performance (indicative)
 
 Vs chinook `serial_Mk` on graphene spinless cubes (see docs for protocol):
