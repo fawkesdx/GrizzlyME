@@ -73,6 +73,25 @@ def test_backend_tagged_entries_do_not_collide(tmp_path):
     assert cache.get(with_backend_tag(key, None)) is None
 
 
+def test_memory_only_get_or_build_never_touches_disk(tmp_path):
+    blocked_parent = tmp_path / "not-a-directory"
+    blocked_parent.write_text("disk path must remain unusable")
+    cache = RadintSetupCache(
+        disk_dir=blocked_parent / "radint",
+        use_disk=False,
+    )
+    calls = 0
+
+    def builder():
+        nonlocal calls
+        calls += 1
+        return ["B"], [0]
+
+    assert cache.get_or_build(("memory-only",), builder) == (["B"], [0])
+    assert cache.get_or_build(("memory-only",), builder) == (["B"], [0])
+    assert calls == 1
+
+
 def test_radint_cache_hit_skips_make_radint_pointer(monkeypatch):
     tb, arpes = _small_arpes(6, 8)
     g = GrizzlyExperiment(tb, arpes, device="cpu")

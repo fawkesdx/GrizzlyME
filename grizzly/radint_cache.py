@@ -7,6 +7,7 @@ import hashlib
 import os
 import pickle
 import tempfile
+import threading
 from pathlib import Path
 from typing import Any, Hashable, Optional
 
@@ -104,6 +105,7 @@ class RadintSetupCache:
 
     def __init__(self, disk_dir: Optional[Path] = None, use_disk: Optional[bool] = None):
         self._store: dict[tuple, tuple] = {}
+        self._memory_lock = threading.Lock()
         self.hits = 0
         self.misses = 0
         self.disk_hits = 0
@@ -185,6 +187,14 @@ class RadintSetupCache:
         hit = self.get(key)
         if hit is not None:
             return hit
+        if not self.use_disk:
+            with self._memory_lock:
+                hit = self.get(key)
+                if hit is not None:
+                    return hit
+                Bfuncs, pointers = builder()
+                self.put(key, Bfuncs, pointers)
+                return Bfuncs, pointers
         self.disk_dir.mkdir(parents=True, exist_ok=True)
         lock_path = self.disk_dir / f"{_key_digest(key)}.lock"
         with lock_path.open("a+") as lf:

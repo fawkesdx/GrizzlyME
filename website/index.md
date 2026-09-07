@@ -12,7 +12,8 @@ Chinook remains responsible for building the TB model. GrizzlyME accelerates:
 - Batched photoemission matrix elements (`compute_all_Mk`)
 - Hamiltonian diagonalization over the k-mesh (`solve_H`)
 - Spectral intensity assembly and Gaussian broadening
-- Analytic radial integrals (`slater`, `hydrogenic`) for cold-start setup
+- Analytic radial integrals (`slater`, `hydrogenic`) through `prepare_me_shell`
+  (used by TensorSpec Full-ME; stock `GrizzlyExperiment.datacube()` wiring pending)
 
 Typical usage is a one-line swap: `GrizzlyExperiment` instead of `chinook.ARPES_lib.experiment`.
 

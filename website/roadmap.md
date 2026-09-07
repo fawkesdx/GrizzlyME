@@ -15,14 +15,15 @@ GPU-accelerated ARPES **matrix-element** simulation as a high-performance compan
 | Public install (GitHub) | **Done** |
 | PyPI / Conda | **Not yet** |
 | Spin / SARPES | **Deferred** (clear error in v0.2) |
-| Faster first-call radials | **Done** in v0.2.0 (torch `slater` / `hydrogenic`) |
+| Faster first-call radials | **Done** in v0.2.0 via `prepare_me_shell` (torch `slater` / `hydrogenic`); stock `GrizzlyExperiment.datacube()` wiring pending |
 
 ## Honest speedups
 
 Early planning hoped for ~100–1000× on full maps. Measured reality for v0.2:
 
 - **Matrix elements alone:** large gains (often tens of × on bigger cubes; higher on CUDA)
-- **Full first `datacube`:** no longer dominated by the radial-integral build for `slater` / `hydrogenic`; other `rad_type` values still pay chinook setup until cache hits
+- **TensorSpec Full-ME / `prepare_me_shell`:** torch removes the slow first radial-integral build for `slater` / `hydrogenic`
+- **Stock `GrizzlyExperiment.datacube()`:** cold radial setup still uses chinook until wired to the shell path; repeat calls benefit from the cache
 
 Repeat runs on the same model benefit strongly from the radint cache.
 
