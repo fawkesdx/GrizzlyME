@@ -13,5 +13,6 @@ Public exports from `grizzly`:
 | `gaussian_convolution_3d` | FFT Gaussian broadening |
 | `get_device` | Device selection helper |
 | `GrizzlyMEv2FeatureError` | Raised for spin / deferred features |
+| `prepare_me_shell` | Cached basis-level ME tables + radial-integral backend choice |
 
-Module layout: `grizzly/experiment.py`, `engine.py`, `hamiltonian.py`, `spectral.py`, `radint_cache.py`, `ylm_torch.py`, `utils.py`, `future.py`.
+Module layout: `grizzly/experiment.py`, `engine.py`, `hamiltonian.py`, `spectral.py`, `me_shell.py`, `radint_cache.py`, `radint_torch.py`, `ylm_torch.py`, `utils.py`, `future.py`.

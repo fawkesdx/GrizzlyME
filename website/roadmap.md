@@ -6,7 +6,7 @@ GPU-accelerated ARPES **matrix-element** simulation as a high-performance compan
 
 ## Design targets
 
-| Target | Status (v0.1) |
+| Target | Status (v0.2) |
 |--------|----------------|
 | Batched ME + spectral on CPU / CUDA | **Done** (spinless) |
 | Drop-in `GrizzlyExperiment` API | **Done** |
@@ -14,15 +14,16 @@ GPU-accelerated ARPES **matrix-element** simulation as a high-performance compan
 | Multi-GPU / very large slabs | Partial (chunked batches); full multi-GPU not yet |
 | Public install (GitHub) | **Done** |
 | PyPI / Conda | **Not yet** |
-| Spin / SARPES | **Deferred** (clear error in v0.1) |
-| Faster first-call Slater radials | Parked (memory+disk cache today) |
+| Spin / SARPES | **Deferred** (clear error in v0.2) |
+| Faster first-call radials | **Done** in v0.2.0 via `prepare_me_shell` (torch `slater` / `hydrogenic`); stock `GrizzlyExperiment.datacube()` wiring pending |
 
 ## Honest speedups
 
-Early planning hoped for ~100–1000× on full maps. Measured reality for v0.1:
+Early planning hoped for ~100–1000× on full maps. Measured reality for v0.2:
 
 - **Matrix elements alone:** large gains (often tens of × on bigger cubes; higher on CUDA)
-- **Full first `datacube`:** still limited by chinook setup (radial integrals); often ~1–2× end-to-end until cache hits
+- **TensorSpec Full-ME / `prepare_me_shell`:** torch removes the slow first radial-integral build for `slater` / `hydrogenic`
+- **Stock `GrizzlyExperiment.datacube()`:** cold radial setup still uses chinook until wired to the shell path; repeat calls benefit from the cache
 
 Repeat runs on the same model benefit strongly from the radint cache.
 
@@ -31,4 +32,4 @@ Repeat runs on the same model benefit strongly from the radint cache.
 1. PyPI (and optionally Conda) release of `grizzlyme`
 2. Broader material examples in docs/tests
 3. Spin / SARPES (v2)
-4. Optional faster radial-integral path for cold starts
+4. Torch radial integrals for the `grid` / `exec` `rad_type` paths

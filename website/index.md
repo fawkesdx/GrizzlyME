@@ -2,16 +2,18 @@
 
 Faster matrix elements and spectral assembly for [chinook](https://github.com/rpday/chinook) ARPES simulations, implemented in PyTorch.
 
-!!! info "v0.1 alpha"
+!!! info "v0.2 alpha"
     Supported today: **spinless** tight-binding models. Spin / SARPES are planned for a later release and raise a clear error if requested.
 
 ## What it does
 
-Chinook remains responsible for building the TB model and (on first use) radial integrals. GrizzlyME accelerates:
+Chinook remains responsible for building the TB model. GrizzlyME accelerates:
 
 - Batched photoemission matrix elements (`compute_all_Mk`)
 - Hamiltonian diagonalization over the k-mesh (`solve_H`)
 - Spectral intensity assembly and Gaussian broadening
+- Analytic radial integrals (`slater`, `hydrogenic`) through `prepare_me_shell`
+  (used by TensorSpec Full-ME; stock `GrizzlyExperiment.datacube()` wiring pending)
 
 Typical usage is a one-line swap: `GrizzlyExperiment` instead of `chinook.ARPES_lib.experiment`.
 

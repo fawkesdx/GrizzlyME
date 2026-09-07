@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import os
 import pickle
 import tempfile
+import threading
 from pathlib import Path
 from typing import Any, Hashable, Optional
 
@@ -66,6 +68,19 @@ def make_radint_cache_key(exp) -> Optional[tuple]:
     )
 
 
+def with_backend_tag(key: Optional[tuple], backend: Optional[str]) -> Optional[tuple]:
+    """Scope a cache key to one radial-integral backend.
+
+    A ``backend`` of ``None`` leaves the key untouched, so callers that accept
+    either backend (``radint_mode='auto'``) keep sharing one entry. Callers
+    that force a backend get their own namespace, otherwise a cached build from
+    the other backend would silently satisfy the request.
+    """
+    if key is None or backend is None:
+        return key
+    return key + (("radint_backend", str(backend)),)
+
+
 def default_disk_dir() -> Path:
     """``$GRIZZLY_RADINT_CACHE_DIR`` or ``~/.cache/grizzlyme/radint``."""
     env = os.environ.get("GRIZZLY_RADINT_CACHE_DIR")
@@ -90,6 +105,7 @@ class RadintSetupCache:
 
     def __init__(self, disk_dir: Optional[Path] = None, use_disk: Optional[bool] = None):
         self._store: dict[tuple, tuple] = {}
+        self._memory_lock = threading.Lock()
         self.hits = 0
         self.misses = 0
         self.disk_hits = 0
@@ -163,6 +179,35 @@ class RadintSetupCache:
             return
         self._store[key] = (Bfuncs, radint_pointers)
         self._save_disk(key, Bfuncs, radint_pointers)
+
+    def get_or_build(self, key, builder):
+        """Return cached (Bfuncs, pointers); only one process runs builder for key."""
+        if key is None:
+            return builder()
+        hit = self.get(key)
+        if hit is not None:
+            return hit
+        if not self.use_disk:
+            with self._memory_lock:
+                hit = self.get(key)
+                if hit is not None:
+                    return hit
+                Bfuncs, pointers = builder()
+                self.put(key, Bfuncs, pointers)
+                return Bfuncs, pointers
+        self.disk_dir.mkdir(parents=True, exist_ok=True)
+        lock_path = self.disk_dir / f"{_key_digest(key)}.lock"
+        with lock_path.open("a+") as lf:
+            fcntl.flock(lf.fileno(), fcntl.LOCK_EX)
+            try:
+                hit = self.get(key)
+                if hit is not None:
+                    return hit
+                Bfuncs, pointers = builder()
+                self.put(key, Bfuncs, pointers)
+                return Bfuncs, pointers
+            finally:
+                fcntl.flock(lf.fileno(), fcntl.LOCK_UN)
 
     def clear(self, disk: bool = False) -> None:
         """Clear memory; if ``disk`` also delete pickle files in ``disk_dir``."""

@@ -1,6 +1,6 @@
 # Scope & limits
 
-## Supported (v0.1)
+## Supported (v0.2)
 
 | Feature | Notes |
 |---------|--------|
@@ -9,12 +9,14 @@
 | Angle cubes | `Tx`, `Ty`, `E` (uses chinook `gen_all_pol`) |
 | Multi-orbital bases | Validated on graphene π and an 8-orbital s/p test model |
 | CPU and CUDA | `device='cpu'` / `'cuda'` / `'auto'` |
+| Torch radial integrals | `rad_type='slater'` / `'hydrogenic'` |
 
-## Not in v0.1
+## Not in v0.2
 
 | Feature | Behavior |
 |---------|----------|
 | Spin / SARPES | Raises `GrizzlyMEv2FeatureError` |
+| Torch radial integrals for `grid` / `exec` / `fixed` | Falls back to chinook |
 | MPS float64 | Unsupported — use CPU |
 | Chinook interactive plot GUI | Unchanged; use your own plotting |
 | Bit-identical `Ig` vs scipy `gaussian_filter` | FFT circular vs reflect; small relative difference possible |

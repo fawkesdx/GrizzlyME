@@ -14,6 +14,7 @@ from .future import GrizzlyMEv2FeatureError, require_spinless
 from .experiment import GrizzlyExperiment
 from .engine import compute_all_Mk
 from .hamiltonian import solve_H, extract_hopping_data, build_and_diagonalize
+from .me_shell import PreparedMeShell, prepare_me_shell
 from .spectral import (
     compute_fermi_distribution,
     compute_M_factor,
@@ -30,6 +31,8 @@ __all__ = [
     "solve_H",
     "extract_hopping_data",
     "build_and_diagonalize",
+    "PreparedMeShell",
+    "prepare_me_shell",
     "compute_fermi_distribution",
     "compute_M_factor",
     "compute_spectral_intensity",

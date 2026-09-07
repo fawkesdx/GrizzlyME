@@ -13,7 +13,12 @@ Indicative timings vs chinook on graphene spinless cubes. Protocol: warmup + med
 
 ## Full pipeline
 
-End-to-end `datacube` + spectral is often **~1.2–1.5×** because chinook still builds radial integrals and mesh setup on first call. After radint cache hits, repeat cubes are much cheaper.
+End-to-end `datacube` + spectral was often **~1.2–1.5×** in v0.1 because
+chinook built the radial integrals and mesh setup on first call. Since v0.2.0,
+`prepare_me_shell` uses torch for `slater` / `hydrogenic` radial integrals, reducing
+cold-shell setup for TensorSpec Full-ME and other callers of that API. Stock
+`GrizzlyExperiment.datacube()` still uses chinook for its cold radial build until
+wired to `prepare_me_shell`; radint cache hits still make repeat cubes cheaper.
 
 ## Spectral only
 
