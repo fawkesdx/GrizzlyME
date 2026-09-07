@@ -1,8 +1,9 @@
-"""Torch port of chinook's Slater-orbital radial integrals.
+"""Torch port of chinook's analytic-orbital radial integrals.
 
 Mirrors ``chinook.radint_lib.make_radint_pointer`` for ``rad_type='slater'``
-(the default when no ``rad_type`` is supplied). Every other radial-wavefunction
-type raises :class:`NotImplementedError` so callers can fall back to chinook.
+(the default when no ``rad_type`` is supplied) and ``rad_type='hydrogenic'``.
+Every other radial-wavefunction type raises :class:`NotImplementedError` so
+callers can fall back to chinook.
 
 The energy x radius grid is evaluated as a batched tensor contraction instead
 of chinook's per-energy adaptive recursion. The integration domain, the
@@ -20,7 +21,10 @@ import numpy as np
 import torch
 from scipy.interpolate import interp1d
 
+import chinook.atomic_mass as am
 import chinook.electron_configs as econ
+
+SUPPORTED_RAD_TYPES = ("slater", "hydrogenic")
 
 # Physical constants, identical to chinook.radint_lib.
 hb = 6.626 * 10 ** -34 / (2 * np.pi)
@@ -91,21 +95,95 @@ def _slater_shape(Z: int, orb: str) -> tuple[float, float, float]:
     return float(ne), float(xi), float(amplitude)
 
 
+def _genlaguerre_coeffs(n: int, alpha: int) -> np.ndarray:
+    """Ascending coefficients of the generalized Laguerre ``L_n^alpha``.
+
+    ``L_n^alpha(x) = sum_i (-1)^i binom(n + alpha, n - i) x^i / i!``, exact for
+    the integer ``alpha = 2l + 1`` that hydrogenic orbitals require.
+    """
+    return np.array(
+        [
+            (-1.0) ** i * math.comb(n + alpha, n - i) / math.factorial(i)
+            for i in range(n + 1)
+        ],
+        dtype=np.float64,
+    )
+
+
+def _hydrogenic_shape(Z: int, orb: str) -> tuple[float, float, float, np.ndarray]:
+    """``(beta, norm, l, laguerre)`` of chinook's ``hydrogenic_exec``.
+
+    ``R(r) = norm * exp(-beta r) * (2 beta r)^l * L_{n-l-1}^{2l+1}(2 beta r)``
+    with ``beta = Z A / (n a_u)`` and the reduced-mass Bohr radius ``a_u``.
+    """
+    mn = am.get_mass_from_number(Z)
+    au = (4 * np.pi * econ.Eo * econ.hb ** 2 * (mn * econ.mp + econ.me)) / (
+        econ.q ** 2 * mn * econ.mp * econ.me
+    )
+    n = int(orb[0])
+    l = int(orb[1])
+    beta = Z * econ.A / (n * au)
+    norm = np.sqrt(
+        (2 * beta) ** 3
+        * math.factorial(n - l - 1)
+        / (2 * n * math.factorial(n + l))
+    )
+    return float(beta), float(norm), float(l), _genlaguerre_coeffs(n - l - 1, 2 * l + 1)
+
+
+def _col(values: Sequence[float], device: torch.device) -> torch.Tensor:
+    """Column vector so radial parameters broadcast over the radius axis."""
+    return torch.as_tensor(
+        list(values), dtype=torch.float64, device=device
+    )[:, None]
+
+
+def _make_radial(rad_type, shapes, jobs, device):
+    """Batched ``R(r)`` for one ``(orbital shell, energy)`` job list."""
+    if rad_type == "slater":
+        ne = _col([shapes[o][0] for o, _ in jobs], device)
+        xi = _col([shapes[o][1] for o, _ in jobs], device)
+        amplitude = _col([shapes[o][2] for o, _ in jobs], device)
+
+        def radial(r: torch.Tensor) -> torch.Tensor:
+            return amplitude * r ** (ne - 1.0) * torch.exp(-xi * r)
+
+        return radial
+
+    beta = _col([shapes[o][0] for o, _ in jobs], device)
+    norm = _col([shapes[o][1] for o, _ in jobs], device)
+    l_pow = _col([shapes[o][2] for o, _ in jobs], device)
+
+    # Shells differ in Laguerre degree; zero-pad to one coefficient matrix.
+    width = max(len(shapes[o][3]) for o, _ in jobs)
+    padded = np.zeros((len(jobs), width), dtype=np.float64)
+    for row, (o, _) in enumerate(jobs):
+        coeffs = shapes[o][3]
+        padded[row, : len(coeffs)] = coeffs
+    laguerre = torch.as_tensor(padded, dtype=torch.float64, device=device)
+
+    def radial(r: torch.Tensor) -> torch.Tensor:
+        x = 2.0 * beta * r
+        poly = torch.zeros_like(x)
+        for i in range(width - 1, -1, -1):
+            poly = poly * x + laguerre[:, i : i + 1]
+        return norm * torch.exp(-beta * r) * x ** l_pow * poly
+
+    return radial
+
+
 def _integrand(
     r: torch.Tensor,
     lp: int,
     k: torch.Tensor,
-    ne: torch.Tensor,
-    xi: torch.Tensor,
-    amplitude: torch.Tensor,
+    radial,
 ) -> torch.Tensor:
-    """Real part of chinook's ``general_Bnl_integrand`` for a Slater orbital.
+    """Real part of chinook's ``general_Bnl_integrand``.
 
     The ``(-1j)**lp`` prefactor is constant and applied to the finished
     integral instead, exactly as chinook applies its phase shift.
     """
-    radial = amplitude * r ** (ne - 1.0) * torch.exp(-xi * r)
-    return r ** 3 * spherical_jn_torch(lp, k * r) * radial
+    return r ** 3 * spherical_jn_torch(lp, k * r) * radial(r)
 
 
 def _find_cutoff(magnitude: np.ndarray) -> float:
@@ -176,13 +254,14 @@ def make_radint_pointer_torch(rad_dict: dict, basis, Eb, device="cpu"):
         - **B_array**: ``(N, 2)`` object array of executables of float.
         - **B_pointers**: integer array mapping basis order into ``B_array``.
 
-    Raises :class:`NotImplementedError` for any non-Slater ``rad_type`` so the
-    caller can fall back to chinook.
+    Raises :class:`NotImplementedError` for any ``rad_type`` outside
+    :data:`SUPPORTED_RAD_TYPES` so the caller can fall back to chinook.
     """
-    rad_type = rad_dict.get("rad_type") or "slater"
-    if str(rad_type).lower() != "slater":
+    rad_type = str(rad_dict.get("rad_type") or "slater").lower()
+    if rad_type not in SUPPORTED_RAD_TYPES:
         raise NotImplementedError(
-            f"torch radial integrals support 'slater' only, got {rad_type!r}"
+            f"torch radial integrals support {SUPPORTED_RAD_TYPES}, "
+            f"got {rad_dict.get('rad_type')!r}"
         )
 
     hv = float(rad_dict["hv"])
@@ -199,7 +278,8 @@ def make_radint_pointer_torch(rad_dict: dict, basis, Eb, device="cpu"):
 
     torch_device = _resolve_device(device)
     orbitals = _gen_orb_labels(basis)
-    shapes = {o: _slater_shape(orbitals[o][0], orbitals[o][1]) for o in orbitals}
+    shape_of = _slater_shape if rad_type == "slater" else _hydrogenic_shape
+    shapes = {o: shape_of(orbitals[o][0], orbitals[o][1]) for o in orbitals}
 
     # One job per (orbital shell, final l', coarse energy); batch them by l'
     # because the Bessel order must be a scalar.
@@ -220,22 +300,10 @@ def make_radint_pointer_torch(rad_dict: dict, basis, Eb, device="cpu"):
     )
 
     for lp, jobs in jobs_by_lp.items():
-        k = torch.as_tensor(
-            [k_of_energy[ei] for _, ei in jobs],
-            dtype=torch.float64,
-            device=torch_device,
-        )[:, None]
-        ne = torch.as_tensor(
-            [shapes[o][0] for o, _ in jobs], dtype=torch.float64, device=torch_device
-        )[:, None]
-        xi = torch.as_tensor(
-            [shapes[o][1] for o, _ in jobs], dtype=torch.float64, device=torch_device
-        )[:, None]
-        amplitude = torch.as_tensor(
-            [shapes[o][2] for o, _ in jobs], dtype=torch.float64, device=torch_device
-        )[:, None]
+        k = _col([k_of_energy[ei] for _, ei in jobs], torch_device)
+        radial = _make_radial(rad_type, shapes, jobs, torch_device)
 
-        probe = _integrand(grid_t[None, :], lp, k, ne, xi, amplitude)
+        probe = _integrand(grid_t[None, :], lp, k, radial)
         probe_np = probe.abs().cpu().numpy()
         upper = torch.as_tensor(
             [_find_cutoff(row) for row in probe_np],
@@ -246,7 +314,7 @@ def make_radint_pointer_torch(rad_dict: dict, basis, Eb, device="cpu"):
         half = 0.5 * (upper - _R_MIN)
         centre = 0.5 * (upper + _R_MIN)
         r = centre + half * nodes_t[None, :]
-        values = _integrand(r, lp, k, ne, xi, amplitude)
+        values = _integrand(r, lp, k, radial)
         quad = (half * weights_t[None, :] * values).sum(dim=1).cpu().numpy()
 
         for (o, ei), value in zip(jobs, quad):

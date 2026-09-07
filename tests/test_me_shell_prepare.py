@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import runpy
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -12,11 +13,13 @@ from grizzly import GrizzlyExperiment, prepare_me_shell
 from grizzly.radint_cache import RadintSetupCache
 
 
-def _tiny_full_me_exp():
+def _tiny_full_me_exp(rad_type=None):
     helpers = runpy.run_path(
         str(Path(__file__).with_name("test_full_pipeline.py"))
     )
     tb, arpes_dict = helpers["build_graphene_tb_arpes"]()
+    if rad_type is not None:
+        arpes_dict["rad_type"] = rad_type
     return GrizzlyExperiment(tb, arpes_dict, device="cpu")
 
 
@@ -130,10 +133,21 @@ def test_auto_reuses_its_own_cache_entry(isolated_cache):
     assert prepare_me_shell(_tiny_full_me_exp()).radint_source == "cache"
 
 
-def test_torch_and_chinook_shells_agree(isolated_cache):
+@pytest.mark.parametrize("rad_type", [None, "slater", "hydrogenic"])
+def test_auto_selects_torch_for_analytic_rad_types(isolated_cache, rad_type):
+    """No chinook fallback warning for the rad_types the torch port covers."""
+    exp = _tiny_full_me_exp(rad_type)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", RuntimeWarning)
+        shell = prepare_me_shell(exp)
+    assert shell.radint_source == "torch"
+
+
+@pytest.mark.parametrize("rad_type", [None, "slater", "hydrogenic"])
+def test_torch_and_chinook_shells_agree(isolated_cache, rad_type):
     """Both backends give the same Bfuncs on the real experiment basis."""
-    exp_c = _tiny_full_me_exp()
-    exp_t = _tiny_full_me_exp()
+    exp_c = _tiny_full_me_exp(rad_type)
+    exp_t = _tiny_full_me_exp(rad_type)
 
     shell_c = prepare_me_shell(exp_c, radint_mode="chinook")
     shell_t = prepare_me_shell(exp_t, radint_mode="torch")

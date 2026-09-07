@@ -93,7 +93,49 @@ def test_pointers_dedupe_shared_anl():
     assert B_t.shape == (2, 2)
 
 
-@pytest.mark.parametrize("rad_type", ["hydrogenic", "grid", "exec", "fixed"])
+def test_hydrogenic_radint_matches_chinook_tiny_basis():
+    basis = _tiny_slater_basis()
+    _assert_parity(basis, _rad_dict("hydrogenic"), (-3.3, 3.3))
+
+
+def test_hydrogenic_graphene_pz_only_basis():
+    basis = _tiny_slater_basis(orbs=[["21z"], ["21z"]], Z={0: 6, 1: 6})
+    _assert_parity(basis, _rad_dict("hydrogenic"), (-3.6, 3.6))
+
+
+def test_hydrogenic_nodal_shells():
+    """``n - l - 1 > 0`` shells exercise the generalized Laguerre polynomial."""
+    basis = _tiny_slater_basis(orbs=[["30", "31z"], ["20"]], Z={0: 23, 1: 6})
+    _assert_parity(basis, _rad_dict("hydrogenic"), (-3.3, 3.3))
+
+
+def test_hydrogenic_rad_type_is_case_insensitive():
+    basis = _tiny_slater_basis(orbs=[["21z"], ["21z"]], Z={0: 6, 1: 6})
+    _assert_parity(basis, _rad_dict("Hydrogenic"), (-3.6, 3.6))
+
+
+def test_hydrogenic_phase_shifts_are_applied():
+    basis = _tiny_slater_basis(orbs=[["21z"], ["21z"]], Z={0: 6, 1: 6})
+    phase = {}
+    for orbital in basis:
+        for lp in (orbital.l - 1, orbital.l + 1):
+            phase[
+                "{:d}-{:d}-{:d}-{:d}".format(
+                    orbital.atom, orbital.n, orbital.l, lp
+                )
+            ] = 0.37
+    _assert_parity(basis, _rad_dict("hydrogenic", phase_shifts=phase), (-3.6, 3.6))
+
+
+def test_hydrogenic_differs_from_slater():
+    """Guard against the hydrogenic branch silently reusing Slater shapes."""
+    basis = _tiny_slater_basis(orbs=[["21z"], ["21z"]], Z={0: 6, 1: 6})
+    B_s, _ = make_radint_pointer_torch(_rad_dict("slater"), basis, (-3.0, 3.0))
+    B_h, _ = make_radint_pointer_torch(_rad_dict("hydrogenic"), basis, (-3.0, 3.0))
+    assert not np.isclose(complex(B_s[0, 1](0.0)), complex(B_h[0, 1](0.0)))
+
+
+@pytest.mark.parametrize("rad_type", ["grid", "exec", "fixed"])
 def test_unsupported_rad_types_raise_not_implemented(rad_type):
     basis = _tiny_slater_basis(orbs=[["21z"], ["21z"]], Z={0: 6, 1: 6})
     with pytest.raises(NotImplementedError):
