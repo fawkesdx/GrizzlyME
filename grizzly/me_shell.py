@@ -16,6 +16,7 @@ from .radint_cache import (
     DEFAULT_RADINT_CACHE,
     dig_range_from_cube,
     make_radint_cache_key,
+    with_backend_tag,
 )
 from .radint_torch import make_radint_pointer_torch
 
@@ -61,12 +62,17 @@ def prepare_me_shell(
     ``radint_mode`` (or ``$GRIZZLY_RADINT``) selects the radial-integral
     backend: ``'auto'`` prefers the torch Slater path and falls back to
     chinook on any failure, ``'torch'`` and ``'chinook'`` force one backend.
+    A forced backend never reuses a cache entry built by the other one.
     """
     mode = resolve_radint_mode(radint_mode)
     torch_device = str(device or getattr(exp, "device", None) or "cpu")
 
     exp.basis = exp.rot_basis()
-    key = make_radint_cache_key(exp)
+    # 'auto' accepts either backend, so it shares one entry; a forced mode gets
+    # its own namespace or the other backend's build would satisfy it.
+    key = with_backend_tag(
+        make_radint_cache_key(exp), None if mode == "auto" else mode
+    )
     dig_range = dig_range_from_cube(exp.cube)
     source = "cache"
 

@@ -67,6 +67,19 @@ def make_radint_cache_key(exp) -> Optional[tuple]:
     )
 
 
+def with_backend_tag(key: Optional[tuple], backend: Optional[str]) -> Optional[tuple]:
+    """Scope a cache key to one radial-integral backend.
+
+    A ``backend`` of ``None`` leaves the key untouched, so callers that accept
+    either backend (``radint_mode='auto'``) keep sharing one entry. Callers
+    that force a backend get their own namespace, otherwise a cached build from
+    the other backend would silently satisfy the request.
+    """
+    if key is None or backend is None:
+        return key
+    return key + (("radint_backend", str(backend)),)
+
+
 def default_disk_dir() -> Path:
     """``$GRIZZLY_RADINT_CACHE_DIR`` or ``~/.cache/grizzlyme/radint``."""
     env = os.environ.get("GRIZZLY_RADINT_CACHE_DIR")

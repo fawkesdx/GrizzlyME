@@ -100,14 +100,46 @@ def test_unknown_mode_rejected(isolated_cache):
         prepare_me_shell(exp, radint_mode="numpy")
 
 
+def test_forced_chinook_ignores_torch_cache_entry(isolated_cache):
+    """A cached torch build must not satisfy an explicit chinook request."""
+    assert prepare_me_shell(_tiny_full_me_exp()).radint_source == "torch"
+
+    shell = prepare_me_shell(_tiny_full_me_exp(), radint_mode="chinook")
+    assert shell.radint_source == "chinook"
+
+
+def test_forced_torch_ignores_chinook_cache_entry(isolated_cache):
+    """A cached chinook build must not satisfy an explicit torch request."""
+    first = prepare_me_shell(_tiny_full_me_exp(), radint_mode="chinook")
+    assert first.radint_source == "chinook"
+
+    shell = prepare_me_shell(_tiny_full_me_exp(), radint_mode="torch")
+    assert shell.radint_source == "torch"
+
+
+def test_forced_modes_still_cache_within_a_backend(isolated_cache):
+    """Backend separation must not disable caching."""
+    for mode in ("chinook", "torch"):
+        assert prepare_me_shell(_tiny_full_me_exp(), radint_mode=mode).radint_source == mode
+        assert prepare_me_shell(_tiny_full_me_exp(), radint_mode=mode).radint_source == "cache"
+
+
+def test_auto_reuses_its_own_cache_entry(isolated_cache):
+    """Auto stays parity-shared with itself across calls."""
+    assert prepare_me_shell(_tiny_full_me_exp()).radint_source == "torch"
+    assert prepare_me_shell(_tiny_full_me_exp()).radint_source == "cache"
+
+
 def test_torch_and_chinook_shells_agree(isolated_cache):
     """Both backends give the same Bfuncs on the real experiment basis."""
     exp_c = _tiny_full_me_exp()
     exp_t = _tiny_full_me_exp()
 
     shell_c = prepare_me_shell(exp_c, radint_mode="chinook")
-    isolated_cache.clear()
     shell_t = prepare_me_shell(exp_t, radint_mode="torch")
+
+    assert shell_c.radint_source == "chinook"
+    assert shell_t.radint_source == "torch"
 
     assert np.array_equal(shell_c.radint_pointers, shell_t.radint_pointers)
     energies = np.linspace(-3.0, 3.0, 13)
