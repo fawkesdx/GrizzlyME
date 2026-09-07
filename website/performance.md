@@ -13,7 +13,7 @@ Indicative timings vs chinook on graphene spinless cubes. Protocol: warmup + med
 
 ## Full pipeline
 
-End-to-end `datacube` + spectral is often **~1.2–1.5×** because chinook still builds radial integrals and mesh setup on first call. After radint cache hits, repeat cubes are much cheaper.
+End-to-end `datacube` + spectral was often **~1.2–1.5×** in v0.1 because chinook built the radial integrals and mesh setup on first call. Since v0.2.0 the `slater` / `hydrogenic` radial integrals run in torch, so the cold-cube setup cost is much smaller; after radint cache hits, repeat cubes are cheaper still.
 
 ## Spectral only
 
