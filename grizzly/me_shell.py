@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import os
+import warnings
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 
@@ -15,6 +17,9 @@ from .radint_cache import (
     dig_range_from_cube,
     make_radint_cache_key,
 )
+from .radint_torch import make_radint_pointer_torch
+
+RADINT_MODES = ("auto", "torch", "chinook")
 
 
 @dataclass
@@ -35,30 +40,72 @@ class PreparedMeShell:
     radint_source: str
 
 
-def prepare_me_shell(exp, *, radint_mode: str = "auto") -> PreparedMeShell:
+def resolve_radint_mode(radint_mode: Optional[str] = None) -> str:
+    """Explicit argument wins, then ``$GRIZZLY_RADINT``, then ``'auto'``."""
+    raw = radint_mode or os.environ.get("GRIZZLY_RADINT") or "auto"
+    mode = str(raw).strip().lower()
+    if mode not in RADINT_MODES:
+        raise ValueError(
+            f"radint_mode must be one of {RADINT_MODES}, got {mode!r}"
+        )
+    return mode
+
+
+def prepare_me_shell(
+    exp, *, radint_mode: Optional[str] = None, device: Optional[str] = None
+) -> PreparedMeShell:
     """Prepare Chinook radial-integral and spherical-harmonic tables.
 
     Basis rotation occurs here, matching Chinook's matrix-element setup.
+
+    ``radint_mode`` (or ``$GRIZZLY_RADINT``) selects the radial-integral
+    backend: ``'auto'`` prefers the torch Slater path and falls back to
+    chinook on any failure, ``'torch'`` and ``'chinook'`` force one backend.
     """
-    if radint_mode == "torch":
-        raise NotImplementedError("torch radial integrals require Phase A")
+    mode = resolve_radint_mode(radint_mode)
+    torch_device = str(device or getattr(exp, "device", None) or "cpu")
 
     exp.basis = exp.rot_basis()
     key = make_radint_cache_key(exp)
     dig_range = dig_range_from_cube(exp.cube)
-    built = False
+    source = "cache"
 
-    def _build_radint():
-        nonlocal built
-        built = True
-        rad_dict = {
+    def _rad_dict():
+        return {
             "hv": exp.hv,
             "W": exp.W,
             "rad_type": exp.rad_type,
             "rad_args": exp.rad_args,
             "phase_shifts": exp.phase_shifts,
         }
-        return radint_lib.make_radint_pointer(rad_dict, exp.basis, dig_range)
+
+    def _build_chinook():
+        nonlocal source
+        source = "chinook"
+        return radint_lib.make_radint_pointer(_rad_dict(), exp.basis, dig_range)
+
+    def _build_torch():
+        nonlocal source
+        source = "torch"
+        return make_radint_pointer_torch(
+            _rad_dict(), exp.basis, dig_range, device=torch_device
+        )
+
+    def _build_radint():
+        if mode == "chinook":
+            return _build_chinook()
+        if mode == "torch":
+            return _build_torch()
+        try:
+            return _build_torch()
+        except Exception as exc:
+            warnings.warn(
+                f"torch radial integrals unavailable ({exc}); "
+                "falling back to chinook",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            return _build_chinook()
 
     Bfuncs, radint_pointers = DEFAULT_RADINT_CACHE.get_or_build(
         key, _build_radint
@@ -83,5 +130,5 @@ def prepare_me_shell(exp, *, radint_mode: str = "auto") -> PreparedMeShell:
         nstates=len(exp.basis),
         spin=bool(getattr(exp, "spin", False)),
         mfp=float(exp.mfp),
-        radint_source="chinook" if built else "cache",
+        radint_source=source,
     )
