@@ -40,6 +40,9 @@ build until wired to `prepare_me_shell`. Force a shell backend with
 `GRIZZLY_RADINT=auto|torch|chinook` or the `radint_mode` argument of
 `prepare_me_shell`.
 
+Gaunt / `all_Y` setup uses torch since v0.2.1 (`ylm_mode` or `$GRIZZLY_YLM`;
+default `auto` → torch with chinook fallback).
+
 Radial-integral setup is cached after the first successful build:
 
 - **Memory** — same process

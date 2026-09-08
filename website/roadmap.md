@@ -16,6 +16,7 @@ GPU-accelerated ARPES **matrix-element** simulation as a high-performance compan
 | PyPI / Conda | **Not yet** |
 | Spin / SARPES | **Deferred** (clear error in v0.2) |
 | Faster first-call radials | **Done** in v0.2.0 via `prepare_me_shell` (torch `slater` / `hydrogenic`); stock `GrizzlyExperiment.datacube()` wiring pending |
+| Torch `all_Y` / Gaunt setup | **Done** in v0.2.1 (`ylm_mode` / `$GRIZZLY_YLM`) |
 
 ## Honest speedups
 

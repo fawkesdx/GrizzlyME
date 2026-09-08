@@ -30,6 +30,7 @@ def isolated_cache(monkeypatch, tmp_path):
     cache = RadintSetupCache(disk_dir=tmp_path, use_disk=False)
     monkeypatch.setattr(me_shell, "DEFAULT_RADINT_CACHE", cache)
     monkeypatch.delenv("GRIZZLY_RADINT", raising=False)
+    monkeypatch.delenv("GRIZZLY_YLM", raising=False)
     return cache
 
 
@@ -149,11 +150,13 @@ def test_torch_and_chinook_shells_agree(isolated_cache, rad_type):
     exp_c = _tiny_full_me_exp(rad_type)
     exp_t = _tiny_full_me_exp(rad_type)
 
-    shell_c = prepare_me_shell(exp_c, radint_mode="chinook")
-    shell_t = prepare_me_shell(exp_t, radint_mode="torch")
+    shell_c = prepare_me_shell(exp_c, radint_mode="chinook", ylm_mode="chinook")
+    shell_t = prepare_me_shell(exp_t, radint_mode="torch", ylm_mode="torch")
 
     assert shell_c.radint_source == "chinook"
     assert shell_t.radint_source == "torch"
+    assert shell_c.ylm_source == "chinook"
+    assert shell_t.ylm_source == "torch"
 
     assert np.array_equal(shell_c.radint_pointers, shell_t.radint_pointers)
     energies = np.linspace(-3.0, 3.0, 13)
@@ -162,3 +165,48 @@ def test_torch_and_chinook_shells_agree(isolated_cache, rad_type):
             yc = np.array([complex(shell_c.Bfuncs[i, j](e)) for e in energies])
             yt = np.array([complex(shell_t.Bfuncs[i, j](e)) for e in energies])
             np.testing.assert_allclose(yt, yc, rtol=1e-5, atol=1e-6)
+
+
+def test_all_Y_torch_matches_chinook(isolated_cache):
+    """Task 7 gate: torch all_Y / Gaunt tables match chinook within 1e-10."""
+    from chinook.ARPES_lib import all_Y
+    from grizzly.me_shell import all_Y_torch
+
+    exp = _tiny_full_me_exp()
+    exp.basis = exp.rot_basis()
+
+    Lc, Mc, Gc, Pc = all_Y(exp.basis)
+    Lt, Mt, Gt, Pt = all_Y_torch(exp.basis, device="cpu")
+
+    np.testing.assert_array_equal(Lt, Lc)
+    np.testing.assert_array_equal(Mt, Mc)
+    np.testing.assert_array_equal(Pt, Pc)
+    max_err = float(np.max(np.abs(Gt - Gc)))
+    assert max_err < 1e-10, f"all_Y Gaunt max_err={max_err}"
+
+
+def test_ylm_auto_defaults_to_torch(isolated_cache):
+    shell = prepare_me_shell(_tiny_full_me_exp())
+    assert shell.ylm_source == "torch"
+
+
+def test_ylm_mode_chinook(isolated_cache):
+    shell = prepare_me_shell(_tiny_full_me_exp(), ylm_mode="chinook")
+    assert shell.ylm_source == "chinook"
+
+
+def test_ylm_env_var(isolated_cache, monkeypatch):
+    monkeypatch.setenv("GRIZZLY_YLM", "chinook")
+    assert prepare_me_shell(_tiny_full_me_exp()).ylm_source == "chinook"
+
+
+def test_ylm_auto_falls_back(isolated_cache, monkeypatch):
+    import grizzly.me_shell as me_shell
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("nope")
+
+    monkeypatch.setattr(me_shell, "all_Y_torch", boom)
+    with pytest.warns(RuntimeWarning, match="falling back to chinook"):
+        shell = prepare_me_shell(_tiny_full_me_exp())
+    assert shell.ylm_source == "chinook"

@@ -81,6 +81,18 @@ print(shell.radint_source)  # 'torch', 'chinook' or 'cache'
 
 A forced backend never reuses a cache entry built by the other one, so parity checks stay honest.
 
+## Spherical-harmonic / Gaunt setup (`all_Y`)
+
+Since **v0.2.1**, `prepare_me_shell` builds the unique `(l,m)` Gaunt tables with
+`ylm_torch.batched_gaunt` (parity vs chinook `all_Y` within `1e-10`). Select with
+`ylm_mode` or `$GRIZZLY_YLM` (`auto` / `torch` / `chinook`). Angle Ylm during ME
+evaluation was already torch (`engine.compute_ylm_batch`).
+
+```python
+shell = prepare_me_shell(exp, ylm_mode="auto")
+print(shell.ylm_source)  # 'torch' or 'chinook'
+```
+
 ## Performance (indicative)
 
 Vs chinook `serial_Mk` on graphene spinless cubes (see docs for protocol):
