@@ -132,3 +132,15 @@ Details: [Scope & limits](https://fawkesdx.github.io/GrizzlyME/limits/).
 MIT — see `LICENSE`. Respect [chinook](https://github.com/rpday/chinook)’s license for that dependency.
 
 If you use GrizzlyME, cite this project and chinook (Day et al., *npj Quantum Materials* 4, 54 (2019)).
+
+## Privacy guard
+
+This repository is public. `scripts/privacy_check.sh` blocks personal home paths, cluster logins,
+personal e-mails and credentials from being committed or pushed (`.privacy-denylist`, with
+placeholders allowed by `.privacy-allowlist`). Enable the hooks once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Audit the whole tree at any time with `scripts/privacy_check.sh --tree`.
