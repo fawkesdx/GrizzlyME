@@ -24,7 +24,7 @@ dependencies = [
     "torch>=2.0",
     "chinook>=1.1.3",
     # chinook.atomic_mass imports pkg_resources; removed from setuptools>=82
-    "setuptools>=61,<85",
+    "setuptools>=61,<82",
 ]
 
 [project.optional-dependencies]
